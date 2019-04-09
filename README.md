@@ -1,5 +1,7 @@
 # s2
-Python wrapper for the Semantic Scholar API
+Python wrapper for the Semantic Scholar API.
+
+*This is a Python 3 fork, with requests replaced by aiohttp*
 
 
 ### Installation
@@ -27,7 +29,7 @@ green -vv --run-coverage
 ```python
 from s2 import *
 s2_paper_id = "b42d4d266b924e03493ffbb6d0e903a2fa84283a"
-paper = SemanticScholarAPI.paper(s2_paper_id)
+paper = SemanticScholarAPISync.paper(s2_paper_id)
 
 # grab any citing papers deemed to be influential.
 # sort them by the year of publication (oldest first).
@@ -36,6 +38,6 @@ influential_papers = sorted(filter(lambda x: x.isInfluential, paper.citations), 
 # how many times were these influential papers cited?
 print("\tPUB YEAR\tTITLE\tNUM. CITED BY")
 for p in influential_papers:
-  complete_summary = p.full()
+  complete_summary = p.complete
   print("{}\t{}\t{}".format(complete_summary.year, complete_summary.title, len(complete_summary.citations)))
 ```

@@ -1,9 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-from .api import SemanticScholarAPI
+from .api import SemanticScholarAPI, SemanticScholarAPISync
 
 __title__ = 's2'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__ = 'LUM.AI'

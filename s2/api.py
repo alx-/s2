@@ -1,6 +1,8 @@
-import requests
+import asyncio
+from .util import get, run
 
-class AuthorStub(object):
+
+class AuthorStub:
 
     def __init__(self, **kwargs):
         self.authorId = kwargs["authorId"]
@@ -18,15 +20,20 @@ class AuthorStub(object):
 
     def json(self):
         return {
-            "authorId" : self.authorId,
-            "name" : self.name,
-            "url" : self.url
+            "authorId": self.authorId,
+            "name": self.name,
+            "url": self.url
         }
 
-    def full(self, **kwargs):
-        return SemanticScholarAPI.author(self.authorId, **kwargs)
+    async def full(self, **kwargs):
+        return await SemanticScholarAPI.author(self.authorId, **kwargs)
 
-class Author(object):
+    @property
+    def complete(self):
+        return SemanticScholarAPISync.author(self.authorId)
+
+
+class Author:
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
@@ -53,7 +60,8 @@ class Author(object):
     def json(self):
         return self._kwargs
 
-class PaperStub(object):
+
+class PaperStub:
 
     def __init__(self, **kwargs):
         self.paperId = kwargs["paperId"]
@@ -73,19 +81,25 @@ class PaperStub(object):
 
     def json(self):
         return {
-            "paperId" : self.paperId,
-            "isInfluential" : self.isInfluential,
-            "title" : self.title,
-            "venue" : self.venue,
-            "year" : self.year,
+            "paperId": self.paperId,
+            "isInfluential": self.isInfluential,
+            "title": self.title,
+            "venue": self.venue,
+            "year": self.year,
         }
 
-    def full(self, **kwargs):
-        return SemanticScholarAPI.paper(self.paperId, **kwargs)
+    async def full(self, **kwargs):
+        return await SemanticScholarAPI.paper(self.paperId, **kwargs)
 
-class Paper(object):
+    @property
+    def complete(self):
+        return SemanticScholarAPISync.paper(self.paperId)
+
+
+class Paper:
 
     def __init__(self, **kwargs):
+        self._kwargs = kwargs
         self.doi = kwargs.get("doi", None)
         self.citationVelocity = kwargs.get("citationVelocity", None)
         self.influentialCitationCount = kwargs.get("influentialCitationCount", None)
@@ -97,6 +111,7 @@ class Paper(object):
         self.references = kwargs.get("references", [])
         self.title = kwargs.get("title", None)
         self.year = kwargs.get("year", None)
+        self.paperId = kwargs.get("paperId", None)
 
     def __str__(self):
         return self.paperId
@@ -110,23 +125,39 @@ class Paper(object):
     def json(self):
         return self._kwargs
 
-class SemanticScholarAPI(object):
+
+class SemanticScholarAPI:
     BASE_URL = "http://api.semanticscholar.org/v1"
     AUTHOR_ENDPOINT = "{}/{}".format(BASE_URL, "author")
     PAPER_ENDPOINT = "{}/{}".format(BASE_URL, "paper")
 
     @staticmethod
-    def paper(paper_id, **kwargs):
+    async def paper(paper_id, **kwargs):
         url = "{}/{}".format(SemanticScholarAPI.PAPER_ENDPOINT, paper_id)
-        resp = requests.get(url, params=kwargs)
-        return None if resp.status_code != 200 else Paper(**resp.json())
+        json = await get(url, params=kwargs)
+
+        if json:
+            return Paper(**json)
 
     @staticmethod
-    def author(author_id, **kwargs):
+    async def author(author_id, **kwargs):
         url = "{}/{}".format(SemanticScholarAPI.AUTHOR_ENDPOINT, author_id)
-        resp = requests.get(url, params=kwargs)
-        return None if resp.status_code != 200 else Author(**resp.json())
+        json = await get(url, params=kwargs)
+
+        if json:
+            return Author(**json)
+
 
     @staticmethod
     def pdf_url(paper_id):
-      return "http://pdfs.semanticscholar.org/{}/{}.pdf".format(paper_id[:4], paper_id[4:])
+        return "http://pdfs.semanticscholar.org/{}/{}.pdf".format(paper_id[:4], paper_id[4:])
+
+
+class SemanticScholarAPISync(SemanticScholarAPI):
+    @staticmethod
+    def paper(paper_id, **kwargs):
+        return run(SemanticScholarAPI.paper(paper_id, **kwargs))
+
+    @staticmethod
+    def author(author_id, **kwargs):
+        return run(SemanticScholarAPI.author(author_id, **kwargs))
